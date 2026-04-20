@@ -16,4 +16,9 @@ class Api::AuthController < ApplicationController
       render json: { error: "Invalid credential!" }, status: :unauthorized
     end
   end
+
+  def index
+    users = User.select(:id, :username)
+    render json: users, status: :ok
+  end
 end

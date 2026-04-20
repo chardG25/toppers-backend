@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   namespace :api do
     post "auth/login", to: "auth#login"
     post "auth/register", to: "auth#register"
+    get "auth/index", to: "auth#index"
   end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

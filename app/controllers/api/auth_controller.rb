@@ -9,16 +9,37 @@ class Api::AuthController < ApplicationController
   end
 
   def login
-    user = User.find_by(username: params[:username])
-    if user&.authenticate(params[:password])
-      render json: { message: "Succesfully Login", user: { id: user.id, username: user.username } }, status: :ok
+    user = User.authenticate_by(username: params[:username], password: params[:password])
+
+    if user
+      token = JwtService.encode(user.id)
+      render json: { token: token }
     else
-      render json: { error: "Invalid credential!" }, status: :unauthorized
+      render json: { error: "Invalid Credentials" }, status: :unauthorized
     end
   end
 
   def index
-    users = User.select(:id, :username)
-    render json: users, status: :ok
+    authorization_header = JwtService.authorization(request)
+    return render json: { error: "Missing Token" }, status: :unauthorized unless authorization_header
+
+    token = authorization_header.split(" ").last
+    begin
+      decoded = JwtService.decode(token)
+      @current_user_id = decoded["user_id"]
+
+      if @current_user_id != 1
+        return render json: { error: "Forbidden" }, status: :forbidden
+      end
+
+      users = User.select(:id, :username)
+      render json: users, status: :ok
+
+    rescue JWT::ExpiredSignature
+      render json: { error: "Expired Session" }, status: :unauthorized
+    rescue JWT::DecodeError
+      render json: { error: "Invalid Token" }, status: :unauthorized
+
+    end
   end
 end
